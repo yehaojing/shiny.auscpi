@@ -6,6 +6,10 @@ shinyServer(function(input, output, session) {
     source("get_data.R")
     dsd <- load_dsd()
     
+    updateSelectInput(session,
+                      "hierarchy_quarter",
+                      choices = rev(generate_quarter_list()))
+    
     updateSelectInput(session, 
                       "hierarchy_region", 
                       choices = split(get_region(dsd)$regionID, get_region(dsd)$regionName),
