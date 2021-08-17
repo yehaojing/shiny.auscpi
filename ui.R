@@ -14,6 +14,7 @@ shinyUI(fluidPage(
 
     titlePanel("Australian CPI Viewer"),
     fluidRow(
+        #verbatimTextOutput("clickData"),
         column(3, 
         selectizeInput("hierarchy_quarter", "Quarter", NULL)
         ),

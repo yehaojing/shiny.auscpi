@@ -45,9 +45,28 @@ shinyServer(function(input, output, session) {
         filter(REGION == "50") %>%
         mutate(DataID = row_number() - 1)
     
+    clickData <- reactive({
+        clickData <- event_data("plotly_click", source = "hierarchy")
+        if(is.null(clickData)) clickData <- list(pointNumber = 1)
+        return(clickData)
+    })
+    
+    selected_hierarchy <- reactive({
+        data_hierarchy_order %>%
+            filter(DataID == as.character(clickData()$pointNumber)) %>%
+            select(INDEX, indexName)
+    })
+    
+    d_subplots <- reactive({
+        d <- data %>%
+            filter(INDEX == selected_hierarchy()$INDEX)
+    })
+    
+    #output$clickData <- renderPrint({as.character(selected_hierarchy())})
+
     output$hierarchy_plot <- renderPlotly({
         plot_ly(data, source = "hierarchy") %>%
-            filter(obsTime == input$hierarchy_quarter, 
+            filter(obsTime == input$hierarchy_quarter,
                    REGION == input$hierarchy_region) %>%
             add_trace(type = input$hierarchy_type,
                       ids = ~INDEX,
@@ -56,41 +75,25 @@ shinyServer(function(input, output, session) {
                       values = ~obsValueFix,
                       branchvalues = "total")
     })
-    
+
     output$bar_plot <- renderPlotly({
-        clickData <- event_data("plotly_click", source = "hierarchy")
-        if(is.null(clickData)) clickData <- list(pointNumber = 1)
-        
-        d <- data %>%
-            filter(INDEX == {
-                data_hierarchy_order %>%
-                    filter(DataID == clickData$pointNumber) %>%
-                    .$INDEX
-            }) %>%
+        d <- d_subplots() %>%
             filter(obsTime == input$hierarchy_quarter)
-        
-        
-        p1 <- plot_ly(d, 
+
+        p1 <- plot_ly(d,
                 x = unlist(d[,"regionName"]),
                 y = unlist(d[,input$bar_data]),
                 text = unlist(d[,input$bar_data]),
                 textposition = "auto",
                 type = "bar") %>%
-            layout(xaxis = list(tickangle = 90))
-
-
+            layout(title = paste(selected_hierarchy()$indexName),
+                   margin = list(b = 180),
+                   xaxis = list(tickangle = 90))
     })
     
     output$line_plot <- renderPlotly({
-        clickData <- event_data("plotly_click", source = "hierarchy")
-        if(is.null(clickData)) clickData <- list(pointNumber = 1)
         
-        d <- data %>%
-            filter(INDEX == {
-                data_hierarchy_order %>%
-                    filter(DataID == clickData$pointNumber) %>%
-                    .$INDEX
-            }) 
+        d <- as.data.frame(d_subplots())
         
         p2 <- plot_ly(d,
                       x = ~quarterEnd,
@@ -100,15 +103,18 @@ shinyServer(function(input, output, session) {
                       type = "scatter",
                       mode = "lines"
         ) %>%
-            layout(legend = list(orientation = 'h',
+            layout(title = selected_hierarchy()$indexName,
+                   xaxis = list(title = 'Quarter'),
+                   yaxis = list(title = 'Index'),
+                   legend = list(orientation = 'h',
                                  xanchor = "center",
-                                 x = 0.5, y = -0.5),
+                                 x = 0.5, y = -0.2),
                    shapes=list(type='line', 
-                                      x0= {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
-                                      x1= {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
-                                      y0=min(d$measureIndex), 
-                                      y1=max(d$measureIndex), 
-                                      line=list(dash='dot', width=1)))
+                                      x0 = {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
+                                      x1 = {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
+                                      y0 = min(d$measureIndex), 
+                                      y1 = max(d$measureIndex), 
+                                      line = list(dash='dot', width=1)))
 
     })
     

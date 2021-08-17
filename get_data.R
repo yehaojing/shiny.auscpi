@@ -91,6 +91,8 @@ get_region <- function(dsd) {
     regionID = sapply(codes, function(x) slot(x, "id")),
     regionName = sapply(codes, function(x) slot(x, "label")$en)
   )
+  
+  region$regionName[region$regionName == "Weighted average of eight capital cities"] <- "8 Caps"
   return(region)
 }
 
