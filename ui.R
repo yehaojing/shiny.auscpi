@@ -14,7 +14,7 @@ shinyUI(fluidPage(
 
     titlePanel("Australian CPI Viewer"),
     fluidRow(
-        #verbatimTextOutput("clickData"),
+        verbatimTextOutput("clickData"),
         column(3, 
         selectizeInput("hierarchy_quarter", "Quarter", NULL)
         ),
@@ -27,15 +27,16 @@ shinyUI(fluidPage(
                                                      "Sunburst" = "sunburst"))
         )
     ),
-    plotlyOutput("hierarchy_plot"),
+    plotlyOutput("hierarchy_plot") %>% addSpinner(spin = "cube"),
     shinyWidgets::radioGroupButtons("bar_data", "", list("% Quarter" = "measurePercQuarter",
                                            "% Annual" = "measurePercAnnual",
                                            "Point Contribution" = "measureContribution")),
     fluidRow(
         column(6,
-               plotlyOutput("bar_plot")),
+               plotlyOutput("bar_plot") %>% addSpinner(spin = "circle")
+               ),
         column(6,
-               plotlyOutput("line_plot")
+               plotlyOutput("line_plot") %>% addSpinner(spin = "circle")
                )
     )
 

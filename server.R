@@ -45,15 +45,41 @@ shinyServer(function(input, output, session) {
         filter(REGION == "50") %>%
         mutate(DataID = row_number() - 1)
     
-    clickData <- reactive({
-        clickData <- event_data("plotly_click", source = "hierarchy")
-        if(is.null(clickData)) clickData <- list(pointNumber = 1)
-        return(clickData)
+    # clickData <- reactive({
+    #     clickData <- event_data("plotly_click", source = "hierarchy")
+    #     if(is.null(clickData)) clickData <- list(pointNumber = 1)
+    #     return(clickData$pointNumber)
+    # })
+    # 
+    # clickDataIso <- reactive({
+    #     event_data('plotly_relayout', source = "hierarchy")
+    #     #clickData <- isolate(event_data("plotly_click", source = "hierarchy"))
+    # })
+    
+    #If treemap/sunburst is clicked, filter subplots
+    #If hierarchy quarter or region or type is changed, reset subplots
+    clickData <- reactiveValues(DataID = 0)
+    observeEvent({
+        input$hierarchy_region
+        input$hierarchy_quarter
+        input$hierarchy_type
+        }, {
+        clickData$DataID <- 0
     })
+    observeEvent({
+        event_data("plotly_click", source = "hierarchy")
+        },{
+        c <- event_data("plotly_click", source = "hierarchy")
+        if(is.null(c)) clickData$DataID <- list(DataID = 0)
+        
+        clickData$DataID <- c$pointNumber
+    })
+    
+    # output$clickData <- renderPrint({as.character(click$x)})
     
     selected_hierarchy <- reactive({
         data_hierarchy_order %>%
-            filter(DataID == as.character(clickData()$pointNumber)) %>%
+            filter(DataID == as.character(clickData$DataID)) %>%
             select(INDEX, indexName)
     })
     
@@ -61,8 +87,6 @@ shinyServer(function(input, output, session) {
         d <- data %>%
             filter(INDEX == selected_hierarchy()$INDEX)
     })
-    
-    #output$clickData <- renderPrint({as.character(selected_hierarchy())})
 
     output$hierarchy_plot <- renderPlotly({
         plot_ly(data, source = "hierarchy") %>%
