@@ -45,17 +45,6 @@ shinyServer(function(input, output, session) {
         filter(REGION == "50") %>%
         mutate(DataID = row_number() - 1)
     
-    # clickData <- reactive({
-    #     clickData <- event_data("plotly_click", source = "hierarchy")
-    #     if(is.null(clickData)) clickData <- list(pointNumber = 1)
-    #     return(clickData$pointNumber)
-    # })
-    # 
-    # clickDataIso <- reactive({
-    #     event_data('plotly_relayout', source = "hierarchy")
-    #     #clickData <- isolate(event_data("plotly_click", source = "hierarchy"))
-    # })
-    
     #If treemap/sunburst is clicked, filter subplots
     #If hierarchy quarter or region or type is changed, reset subplots
     clickData <- reactiveValues(DataID = 0)
@@ -74,8 +63,6 @@ shinyServer(function(input, output, session) {
         
         clickData$DataID <- c$pointNumber
     })
-    
-    # output$clickData <- renderPrint({as.character(click$x)})
     
     selected_hierarchy <- reactive({
         data_hierarchy_order %>%
