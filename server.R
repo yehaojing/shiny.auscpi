@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(tidyverse)
 library(shinyWidgets)
 library(plotly)
@@ -84,7 +85,8 @@ shinyServer(function(input, output, session) {
                       parents = ~parentID,
                       labels = ~indexName,
                       values = ~obsValueFix,
-                      branchvalues = "total")
+                      branchvalues = "total") %>%
+            event_register("plotly_click")
     })
 
     output$bar_plot <- renderPlotly({
@@ -98,8 +100,22 @@ shinyServer(function(input, output, session) {
                 textposition = "auto",
                 type = "bar") %>%
             layout(title = paste(selected_hierarchy()$indexName),
-                   margin = list(b = 180),
-                   xaxis = list(tickangle = 90))
+                   margin = list(b = 120),
+                   xaxis = list(tickangle = 90,
+                                fixedrange = TRUE),
+                   yaxis = list(fixedrange = TRUE)) %>%
+            config(displayModeBar = FALSE,
+                   modeBarButtonsToRemove = c(
+                "zoomIn2d", 
+                "zoomOut2d", 
+                "pan2d", 
+                "toImage",
+                "zoom2d",
+                "autoScale2d",
+                "lasso2d",
+                "hoverCompareCartesian"
+                ),
+                   displaylogo = FALSE)
     })
     
     output$line_plot <- renderPlotly({
@@ -112,20 +128,28 @@ shinyServer(function(input, output, session) {
                       color = ~regionName,
                       colors = "Set3",
                       type = "scatter",
-                      mode = "lines"
+                      mode = "lines+markers"
         ) %>%
             layout(title = selected_hierarchy()$indexName,
-                   xaxis = list(title = 'Quarter'),
+                   xaxis = list(title = 'Quarter',
+                                rangeslider = list(type = "date")),
                    yaxis = list(title = 'Index'),
                    legend = list(orientation = 'h',
                                  xanchor = "center",
-                                 x = 0.5, y = -0.2),
+                                 x = 0.5, y = -0.6),
                    shapes=list(type='line', 
                                       x0 = {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
                                       x1 = {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
                                       y0 = min(d$measureIndex), 
                                       y1 = max(d$measureIndex), 
-                                      line = list(dash='dot', width=1)))
+                                      line = list(dash='dot', width = 1))) %>%
+            config(modeBarButtonsToRemove = c(
+                "zoomIn2d",
+                "zoomOut2d",
+                "pan2d",
+                "toImage",
+                "autoScale2d"),
+                   displaylogo = FALSE)
 
     })
     
