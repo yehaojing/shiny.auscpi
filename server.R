@@ -1,8 +1,8 @@
-library(shiny)
-library(shinydashboard)
-library(tidyverse)
-library(shinyWidgets)
-library(plotly)
+# library(shiny)
+# library(shinydashboard)
+# library(tidyverse)
+# library(shinyWidgets)
+# library(plotly)
 shinyServer(function(input, output, session) {
     source("get_data.R")
     dsd <- load_dsd()
@@ -151,6 +151,29 @@ shinyServer(function(input, output, session) {
                 "autoScale2d"),
                    displaylogo = FALSE)
 
+    })
+    
+    output$heatmap_plot <- renderPlotly({
+        
+        d <- as.data.frame(d_subplots())
+        p3 <- plot_ly(
+            d,
+            x = ~quarterEnd,
+            y = ~regionName,
+            z = ~measurePercQuarter,
+            xgap = 1,
+            ygap = 1,
+            type = "heatmap",
+            zmin = -5,
+            zmax = 5,
+            colors = colorRamp(c("tomato4", "white", "seagreen4")),
+            colorbar = list(title = "")
+        ) %>%
+        layout(title = selected_hierarchy()$indexName,
+               xaxis = list(title = 'Quarter',
+                            rangeslider = list(type = "date")),
+               yaxis = list(title = 'City'))
+        
     })
     
     

@@ -1,3 +1,8 @@
+library(shiny)
+library(shinydashboard)
+library(tidyverse)
+library(shinyWidgets)
+library(plotly)
 ui <- dashboardPage(
     skin = "black",
     dashboardHeader(title = "Australian CPI Viewer"),
@@ -27,18 +32,23 @@ ui <- dashboardPage(
                         )
                     ),
                     fluidRow(
-                        box(shinyWidgets::radioGroupButtons("bar_data", "", list("% Quarter" = "measurePercQuarter",
+                        box(pickerInput("bar_data", "", list("% Quarter" = "measurePercQuarter",
                                                                                  "% Annual" = "measurePercAnnual",
-                                                                                 "Point Contribution" = "measureContribution")),
+                                                                                 "Point Contribution" = "measureContribution",
+                                                                                 "Change to Point Contribution" = "measureContributionChange",
+                                                                                 "Index" = "measureIndex")),
                             plotlyOutput("bar_plot") %>% addSpinner(spin = "cube")
                         ),
                         box(
                             plotlyOutput("line_plot") %>% addSpinner(spin = "cube")
+                        ),
+                        box(
+                            plotlyOutput(("heatmap_plot")) %>% addSpinner(spin = "cube")
                         )
                     )
             ),
             tabItem(tabName = "about",
-                    "Authored by William Ye at github.com/yehaojing/shiny.auscpi")
+                    includeMarkdown("README.md"))
         )
     )
 )
