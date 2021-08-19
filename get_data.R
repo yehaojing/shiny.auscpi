@@ -157,5 +157,39 @@ fix_rounding_issue <- function(data) {
   return(contribution4)
 }
 
+generate_map <- function() {
+  lga_cities <- c("Sydney (C)", "Melbourne (C)", "Brisbane (C)", "Perth (C)", 
+                  "Adelaide (C)", "Hobart (C)", "Darwin (C)", "Unincorporated ACT")
+  
+  cities_sf <- ozmap_data("abs_lga")
+  st_agr(cities_sf) <- "constant"
+  cities_sf <- cities_sf %>%
+    filter(NAME %in% lga_cities) %>% 
+    st_transform(4326) %>% #ozmaps uses GDA94 projection
+    st_centroid() %>%
+    mutate(NAME = str_replace(NAME, fixed(" (C)"), ""))
+
+  cities_sf[cities_sf$NAME == "Unincorporated ACT", ]$NAME <- "Canberra"
+  
+  map <- leaflet(cities_sf) %>% 
+    addProviderTiles(providers$CartoDB.DarkMatterNoLabels) %>% 
+    addCircles(color = "green",
+               radius = 1E5,
+               popup = ~NAME,
+               highlightOptions = list(color = "white"))
+}
+
+adjust_for_inflation <- function(data, quarter){
+  data <- data %>%
+    arrange(INDEX, quarterEnd, REGION) %>%
+    group_by(INDEX, REGION) %>%
+    mutate(measureIndexBase = case_when(obsTime == quarter ~ measureIndex,
+                                        TRUE ~ NA_real_)) %>%
+    fill(measureIndexBase, .direction = "updown") %>%
+    mutate(measureIndexAdjusted = case_when(obsTime == quarter ~ 100,
+                                            TRUE ~ measureIndex/measureIndexBase * 100)) %>%
+    select(-measureIndexBase)
+}
+
 # saveRDS(data, file = "data/cpi_data.rds")
 # saveRDS(get_dsd(), file = "data/cpi_dsd.rds")

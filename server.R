@@ -11,6 +11,10 @@ shinyServer(function(input, output, session) {
                       "hierarchy_quarter",
                       choices = rev(generate_quarter_list()))
     
+    updateSelectInput(session,
+                      "adjusted_quarter",
+                      choices = rev(generate_quarter_list()))
+    
     updateSelectInput(session, 
                       "hierarchy_region", 
                       choices = split(get_region(dsd)$regionID, get_region(dsd)$regionName),
@@ -120,12 +124,12 @@ shinyServer(function(input, output, session) {
     
     output$line_plot <- renderPlotly({
         
-        d <- as.data.frame(d_subplots())
+        d <- as.data.frame(d_subplots()) %>% adjust_for_inflation(input$adjusted_quarter)
         
         p2 <- plot_ly(d,
                       x = ~quarterEnd,
-                      y = ~measureIndex,
-                      color = ~regionName,
+                      y = unlist(d[,input$line_data]),
+                      color = unlist(d[,"regionName"]),
                       colors = "Set3",
                       type = "scatter",
                       mode = "lines+markers"
@@ -138,11 +142,12 @@ shinyServer(function(input, output, session) {
                                  xanchor = "center",
                                  x = 0.5, y = -0.6),
                    shapes=list(type='line', 
-                                      x0 = {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
-                                      x1 = {data_date_lookup %>% filter(obsTime == input$hierarchy_quarter) %>% .$quarterEnd}, 
-                                      y0 = min(d$measureIndex), 
-                                      y1 = max(d$measureIndex), 
-                                      line = list(dash='dot', width = 1))) %>%
+                                      x0 = {data_date_lookup %>% filter(obsTime == input$adjusted_quarter) %>% .$quarterEnd}, 
+                                      x1 = {data_date_lookup %>% filter(obsTime == input$adjusted_quarter) %>% .$quarterEnd}, 
+                                      y0 = min(unlist(d[,input$line_data])), 
+                                      y1 = max(unlist(d[,input$line_data])), 
+                                      line = list(dash='dot', width = 1))
+                   ) %>%
             config(modeBarButtonsToRemove = c(
                 "zoomIn2d",
                 "zoomOut2d",
@@ -172,8 +177,19 @@ shinyServer(function(input, output, session) {
         layout(title = selected_hierarchy()$indexName,
                xaxis = list(title = 'Quarter',
                             rangeslider = list(type = "date")),
-               yaxis = list(title = 'City'))
+               yaxis = list(title = 'City')) %>%
+            config(modeBarButtonsToRemove = c(
+                "zoomIn2d",
+                "zoomOut2d",
+                "pan2d",
+                "toImage",
+                "autoScale2d"),
+                displaylogo = FALSE)
         
+    })
+    
+    output$map_plot <- renderLeaflet({
+        generate_map()
     })
     
     
